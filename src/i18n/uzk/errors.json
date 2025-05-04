@@ -1,0 +1,8 @@
+{
+    "token_required": "Токен мавжуд эмас",
+    "invalid_token_format": "Токен формати нотўғри",
+    "invalid_or_expired_token": "Токен нотўғри ёки амал қилиш муддати тугаган",
+    "not_found": "{property} мавжуд эмас",
+    "is_not_empty": "{property} бўш бўлиши мумкин эмас",
+    "is_string": "{property} матн бўлиши керак"
+}

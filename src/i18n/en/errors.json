@@ -1,0 +1,8 @@
+{
+    "token_required": "Token is required",
+    "invalid_token_format": "Invalid token format",
+    "invalid_or_expired_token": "Invalid or expired token",
+    "not_found": "{property} not found",
+    "is_not_empty": "{property} is not empty",
+    "is_string": "{property} must be a string"
+}

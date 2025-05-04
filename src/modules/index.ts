@@ -1,0 +1,12 @@
+export { AuthModule } from './auth/auth.module';
+export { UsersModule } from './users/users.module';
+export { CheckModule } from './check/module';
+export { ProductsModule } from './products/products.module';
+export { JwtGlobalModule } from './jwt/jwt.module';
+export { DealStageModule } from './deal-stage/dealStage.module';
+export { RegionsModule } from './regions/regions.module';
+export { DistrictsModule } from './districts/districts.module';
+export { ContactsModule } from './contacts/contacts.module';
+export { DeliveryManModule } from './deliveryMan/deliveryMan.module';
+export { DealModule } from './deal/deal.module';
+export { DealActivityModule } from './deal-activity/deal-activity.module';

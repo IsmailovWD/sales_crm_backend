@@ -1,0 +1,8 @@
+{
+    "token_required": "Токен не найден",
+    "invalid_token_format": "Неверный формат токена",
+    "invalid_or_expired_token": "Неверный или истекший токен",
+    "not_found": "{property} не найден",
+    "is_not_empty": "{property} не должно быть пустым",
+    "is_string": "{property} должен быть строкой"
+}

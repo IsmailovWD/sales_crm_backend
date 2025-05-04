@@ -1,0 +1,20 @@
+<select id="langSelect" multiple>
+    <option value="en">English</option>
+    <option value="uz">Uzbek</option>
+    <option value="ru">Russian</option>
+    <option value="fr">French</option>
+  </select>
+  
+  <script>
+    document.getElementById('langSelect').addEventListener('change', function() {
+      const selectedLanguages = Array.from(this.selectedOptions).map(opt => opt.value).join(',');
+      localStorage.setItem('Accept-Language', selectedLanguages);
+    });
+  
+    function addLanguageHeader(req) {
+      const languages = localStorage.getItem('Accept-Language') || 'en';
+      req.headers['Accept-Language'] = languages;
+      return req;
+    }
+  </script>
+  

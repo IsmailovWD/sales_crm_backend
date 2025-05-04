@@ -1,0 +1,8 @@
+{
+    "token_required": "Token mavjud emas",
+    "invalid_token_format": "Token formati noto‘g‘ri",
+    "invalid_or_expired_token": "Token noto‘g‘ri yoki amal qilish muddati tugagan",
+    "not_found": "{property} topilmadi",
+    "is_not_empty": "{property} bo‘sh bo‘lishi mumkin emas",
+    "is_string": "{property} matn bo‘lishi kerak"
+}
