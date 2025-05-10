@@ -53,8 +53,7 @@ export class DealService extends BaseService<Deal> {
         ...deal,
         stage: { id: deal_stage_id },
         contact: contact,
-        contact_id: contact.id,
-        stage_id: deal_stage_id,
+        ...deal,
       } as Deal;
 
       const document = await this.dealRepo.save(body);
@@ -106,7 +105,6 @@ export class DealService extends BaseService<Deal> {
           });
         }
       }
-      console.log(contact, document.contact);
       if (contact.id !== document.contact.id) {
         changes.push({
           field: 'contact',
@@ -121,9 +119,15 @@ export class DealService extends BaseService<Deal> {
       document.stage_id = deal_stage_id;
       document.tags = deal.tags ?? [];
       document.summa = deal.summa ?? 0;
+      document.deliveryman_id = deal.deliveryman_id ?? null;
+      document.delivery_date = deal.delivery_date ?? null;
+      document.region_id = deal.region_id ?? null;
+      document.district_id = deal.district_id ?? null;
+      document.address = deal.address ?? '';
+      document.comment = deal.comment ?? '';
       await this.dealRepo.save(document);
       await this.#addChildTables(document, orders, true);
-      await this.updateLead(old_stage_id, deal_stage_id, document);
+      await this.updateLead(old_stage_id, deal_stage_id, document, user_id);
       if (changes.length > 0) {
         await this.activityService.createActivity(
           {
@@ -145,7 +149,7 @@ export class DealService extends BaseService<Deal> {
     try {
       return await this.dealRepo.findOne({
         where: { id },
-        relations: ['contact', 'orders'],
+        relations: ['contact', 'orders', 'region', 'district'],
       });
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
@@ -221,6 +225,7 @@ export class DealService extends BaseService<Deal> {
     old_stage_id: number,
     new_stage_id: number,
     deal: Deal,
+    user_id: number,
   ) => {
     if (this.crmSocketServer) {
       this.crmSocketServer.emit('update-deal', {
@@ -228,6 +233,27 @@ export class DealService extends BaseService<Deal> {
         old_stage_id,
         new_stage_id,
       });
+      if (old_stage_id === new_stage_id) return;
+      const from_stage_name = await this.dealStageService.findByIds([
+        old_stage_id,
+        new_stage_id,
+      ]);
+      await this.activityService.createActivity(
+        {
+          deal_id: deal.id,
+          type: DealActivityType.STAGE_CHANGE,
+          is_pin: false,
+          metadata: {
+            from_stage:
+              from_stage_name.find((item) => item.id === old_stage_id)?.name ??
+              '',
+            to_stage:
+              from_stage_name.find((item) => item.id === new_stage_id)?.name ??
+              '',
+          },
+        },
+        user_id,
+      );
     }
   };
 }

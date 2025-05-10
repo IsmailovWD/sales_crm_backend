@@ -40,8 +40,8 @@ cd sales-crm-backend
 
 ### Install dependencies
 
-```npm install
-
+```
+npm install
 ```
 
 ### Setup .env file

@@ -71,7 +71,11 @@ export class UsersService {
   }
 
   async findOneByUsername(username: string): Promise<User> {
-    const user = await this.userRepo.findOneBy({ username });
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .select(['user.password', 'user.username', 'user.id'])
+      .where('user.username = :username', { username })
+      .getOne();
 
     if (!user) {
       throw new HttpException(

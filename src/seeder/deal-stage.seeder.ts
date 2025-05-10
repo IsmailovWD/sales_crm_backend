@@ -53,11 +53,6 @@ export class DealStageSeeder implements Seeder {
     }
     await dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(DealStage);
-
-      // for (let i = 0; i < DEFAULT.length; i++) {
-      //   const user = repo.create(DEFAULT[i]);
-      //   await repo.save(user);
-      // }
       await repo.save(DEFAULT);
       await manager.getRepository(SeederMeta).save({ name });
     });

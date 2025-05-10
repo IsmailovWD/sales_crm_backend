@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { Deal } from '../../deal/entities/deal.entity';
 import { User } from '../../users/entities/user.entity';
-import { DeliveryMan } from 'src/modules/deliveryMan/entities/deliveryMan.entity';
 
 export enum DealActivityType {
   NOTE = 'NOTE',

@@ -1,3 +1,4 @@
+import { Deal } from '../../deal/entities/deal.entity';
 import { Contacts } from '../../contacts/entities/contacts.entity';
 import { DeliveryMan } from '../../deliveryMan/entities/deliveryMan.entity';
 import { Districts } from '../../districts/entities/districts.entity';
@@ -37,4 +38,8 @@ export class Regions {
 
   @OneToMany(() => Contacts, (contact) => contact.region)
   contacts: Contacts[];
+
+  //relations
+  @OneToMany(() => Deal, (deal) => deal.region)
+  deals: Deal[];
 }

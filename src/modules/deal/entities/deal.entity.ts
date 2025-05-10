@@ -13,7 +13,9 @@ import { DealStage } from '../../deal-stage/entities/dealStage.entity';
 import { Contacts } from '../../contacts/entities/contacts.entity';
 import { DealOrders } from './dealOrders.entity';
 import { DealActivity } from '../../deal-activity/entities/deal-activity.entity';
-import { DeliveryMan } from 'src/modules/deliveryMan/entities/deliveryMan.entity';
+import { DeliveryMan } from '../../deliveryMan/entities/deliveryMan.entity';
+import { Regions } from '../../regions/entities/regions.entity';
+import { Districts } from '../../districts/entities/districts.entity';
 
 const ColumnNumericTransformer = {
   to: (value: number) => value,
@@ -59,21 +61,25 @@ export class Deal {
   updatedAt: Date;
 
   // Delivery fields
-  @Column({ nullable: true })
-  deliveryman_id: number;
+  @Column({ nullable: true, type: 'int' })
+  deliveryman_id: number | null;
 
   @ManyToOne(() => DeliveryMan)
   @JoinColumn({ name: 'deliveryman_id' })
   deliveryman: DeliveryMan;
 
-  @Column({ nullable: true })
-  delivery_date: number;
+  @Column({
+    nullable: true,
+    type: 'bigint',
+    transformer: ColumnNumericTransformer,
+  })
+  delivery_date: number | null;
 
-  @Column({ nullable: true })
-  region_id: number;
+  @Column({ nullable: true, type: 'int' })
+  region_id: number | null;
 
-  @Column({ nullable: true })
-  district_id: number;
+  @Column({ nullable: true, type: 'int' })
+  district_id: number | null;
 
   @Column({ nullable: true })
   address: string;
@@ -98,4 +104,12 @@ export class Deal {
   @ManyToOne(() => Contacts, (contact) => contact.deals, { nullable: false })
   @JoinColumn({ name: 'contact_id' })
   contact: Contacts;
+
+  @ManyToOne(() => Regions, (region) => region.deals, { nullable: true })
+  @JoinColumn({ name: 'region_id' })
+  region: Regions;
+
+  @ManyToOne(() => Districts, (district) => district.deals, { nullable: true })
+  @JoinColumn({ name: 'district_id' })
+  district: Districts;
 }
