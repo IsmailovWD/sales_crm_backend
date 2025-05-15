@@ -1,22 +1,21 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Districts } from './entities/districts.entity';
 import { CreateDistrictsDto } from './dto/create-districts.dto';
 import { UpdateDistrictsDto } from './dto/update-districts.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DatabaseService } from '../../libs/database/database.service';
+import { BaseService } from '../base.service';
 
 @Injectable()
-export class DistrictsService {
-  constructor(
-    @InjectRepository(Districts)
-    private districtsRepo: Repository<Districts>,
-  ) {}
+export class DistrictsService extends BaseService<Districts> {
+  constructor(protected readonly databaseService: DatabaseService) {
+    super(databaseService, Districts);
+  }
 
   getAll = async () => {
-    return await this.districtsRepo.find();
+    return await this.getRepo().find();
   };
   create = async (body: CreateDistrictsDto) => {
-    return await this.districtsRepo.save(
+    return await this.getRepo().save(
       {
         name: body.name,
         region: { id: +body.region_id },
@@ -26,10 +25,10 @@ export class DistrictsService {
   };
 
   update = async (body: UpdateDistrictsDto, id: number) => {
-    return await this.districtsRepo.update({ id }, body);
+    return await this.getRepo().update({ id }, body);
   };
 
   delete = async (id: number) => {
-    return this.districtsRepo.delete({ id });
+    return this.getRepo().delete({ id });
   };
 }

@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { DatabaseModule } from './database/database.module';
+// import { DatabaseModule } from './database/database.module';
 import * as Modules from './modules';
 import { I18nModule } from './i18n/i18n.module';
 import { JwtModule } from '@nestjs/jwt';
 import { SocketModule } from './sockets.io/socketIo.module';
 import config from './config/config';
-
+import { DatabaseModule } from './libs/database/database.module';
+import { TenancyModule } from './libs/tenancy/tenancy.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
+    TenancyModule,
     I18nModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

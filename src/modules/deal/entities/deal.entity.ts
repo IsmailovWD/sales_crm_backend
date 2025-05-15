@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { DealStage } from '../../deal-stage/entities/dealStage.entity';
 import { Contacts } from '../../contacts/entities/contacts.entity';
-import { DealOrders } from './dealOrders.entity';
+import { DealOrders } from '../../deal-orders/entities/dealOrders.entity';
 import { DealActivity } from '../../deal-activity/entities/deal-activity.entity';
 import { DeliveryMan } from '../../deliveryMan/entities/deliveryMan.entity';
 import { Regions } from '../../regions/entities/regions.entity';
@@ -19,7 +19,7 @@ import { Districts } from '../../districts/entities/districts.entity';
 
 const ColumnNumericTransformer = {
   to: (value: number) => value,
-  from: (value: string): number => parseFloat(value),
+  from: (value: string): number | null => (value ? parseFloat(value) : null),
 };
 
 @Entity('deal')
@@ -28,8 +28,8 @@ export class Deal {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: true })
-  title: string;
+  @Column({ type: 'varchar', nullable: true, length: 255 })
+  title: string | null;
 
   @Column()
   stage_id: number;
@@ -49,6 +49,9 @@ export class Deal {
   })
   summa: string | number;
 
+  @Column({ nullable: true, type: 'int' })
+  assigned_user_id: number | null;
+
   // timestamps
   @CreateDateColumn({
     type: 'timestamp',
@@ -66,7 +69,7 @@ export class Deal {
 
   @ManyToOne(() => DeliveryMan)
   @JoinColumn({ name: 'deliveryman_id' })
-  deliveryman: DeliveryMan;
+  deliveryman: DeliveryMan | null;
 
   @Column({
     nullable: true,
@@ -81,14 +84,14 @@ export class Deal {
   @Column({ nullable: true, type: 'int' })
   district_id: number | null;
 
-  @Column({ nullable: true })
-  address: string;
+  @Column({ nullable: true, type: 'varchar', length: 255 })
+  address: string | null;
 
   @Column('text', { array: true, default: [] })
   location: string[] | number[];
 
-  @Column({ nullable: true })
-  comment: string;
+  @Column({ type: 'varchar', nullable: true })
+  comment: string | null;
 
   // join fields
   @OneToMany(() => DealActivity, (activity) => activity.deal)

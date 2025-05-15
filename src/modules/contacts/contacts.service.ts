@@ -10,12 +10,14 @@ import { CreateContactsDto } from './dto/create-contacts.dto';
 import { UpdateContactsDto } from './dto/update-contacts.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DatabaseService } from '../../libs/database/database.service';
+import { BaseService } from '../base.service';
 
 @Injectable()
-export class ContactsService {
-  constructor(
-    @InjectRepository(Contacts) private ContactsRepo: Repository<Contacts>,
-  ) {}
+export class ContactsService extends BaseService<Contacts> {
+  constructor(protected readonly databaseService: DatabaseService) {
+    super(databaseService, Contacts);
+  }
 
   async getAll(
     size: number,
@@ -32,7 +34,7 @@ export class ContactsService {
     if (type === 'client') filter.is_client = true;
     else if (type === 'supplier') filter.is_supplier = true;
 
-    const [data, count] = await this.ContactsRepo.findAndCount({
+    const [data, count] = await this.getRepo().findAndCount({
       where: filter,
       select: [
         'id',
@@ -56,9 +58,9 @@ export class ContactsService {
   }
 
   async create(body: CreateContactsDto) {
-    const contact = this.ContactsRepo.create(body);
+    const contact = this.getRepo().create(body);
 
-    return await this.ContactsRepo.save(contact);
+    return await this.getRepo().save(contact);
   }
 
   async update(
@@ -75,7 +77,7 @@ export class ContactsService {
     id: string,
   ) {
     try {
-      const preloadData = await this.ContactsRepo.preload({
+      const preloadData = await this.getRepo().preload({
         id: +id,
         country_code,
         dial_code,
@@ -91,7 +93,7 @@ export class ContactsService {
         throw new NotFoundException('Contact not found');
       }
 
-      await this.ContactsRepo.save(preloadData);
+      await this.getRepo().save(preloadData);
       return await this.getById(id);
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
@@ -99,7 +101,7 @@ export class ContactsService {
   }
 
   async delete(id: string) {
-    const result = await this.ContactsRepo.delete(id);
+    const result = await this.getRepo().delete(id);
     if (result.affected === 0) {
       throw new HttpException('Contact not found', HttpStatus.NOT_FOUND);
     }
@@ -107,7 +109,7 @@ export class ContactsService {
   }
 
   async findOrCreate(body: CreateContactsDto) {
-    let model = await this.ContactsRepo.findOne({
+    let model = await this.getRepo().findOne({
       where: { phone_number: body.phone_number },
     });
 
@@ -115,13 +117,13 @@ export class ContactsService {
       return { model, new: false };
     }
 
-    model = await this.ContactsRepo.save(body);
+    model = await this.getRepo().save(body);
 
     return { model, new: true };
   }
 
   async getById(id: string) {
-    const contact = await this.ContactsRepo.findOne({
+    const contact = await this.getRepo().findOne({
       where: { id: +id },
       select: [
         'id',

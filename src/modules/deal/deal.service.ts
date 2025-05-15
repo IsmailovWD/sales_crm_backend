@@ -1,240 +1,232 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { BaseService } from '../base.service';
 import { DealCreateDto, OrdersDto } from './dto/deal-create.dto';
 import { ContactsService } from '../contacts/contacts.service';
 import { Server } from 'socket.io';
 import { Deal } from './entities/deal.entity';
-import { DealOrders } from './entities/dealOrders.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In } from 'typeorm';
 import { DealUpdateDto } from './dto/deal-update.dto';
 import { DealActivityService } from '../deal-activity/deal-activity.service';
 import { User } from '../users/entities/user.entity';
 import { DealActivityType } from '../deal-activity/entities/deal-activity.entity';
 import { DealStageService } from '../deal-stage/dealStage.service';
+import { DatabaseService } from '../../libs/database/database.service';
+import { UsersService } from '../users/users.service';
+import { DeliveryManService } from '../deliveryMan/deliveryMan.service';
+import { DealOrdersService } from '../deal-orders/deal-orders.service';
 
 @Injectable()
 export class DealService extends BaseService<Deal> {
   private crmSocketServer?: Server;
+  // private getRepo(): Repository<Deal>;
+  // private orderRepo: Repository<DealOrders>;
 
   constructor(
-    @InjectRepository(Deal) private dealRepo: Repository<Deal>,
+    protected readonly databaseService: DatabaseService,
     private readonly contactService: ContactsService,
-    @InjectRepository(DealOrders)
-    private orderRepo: Repository<DealOrders>,
-    private activityService: DealActivityService,
-    private dealStageService: DealStageService,
+    private readonly activityService: DealActivityService,
+    @Inject(forwardRef(() => DealStageService))
+    private readonly dealStageService: DealStageService,
+    private readonly usersService: UsersService,
+    private readonly deliveryManService: DeliveryManService,
+    private readonly dealOrdersService: DealOrdersService,
   ) {
-    super(dealRepo);
+    super(databaseService, Deal);
   }
 
   setSocketServer(server: Server) {
     this.crmSocketServer = server;
   }
 
-  getAll(size: number, stage: number) {
-    return this.dealRepo.find({
+  async getAll(size: number, stage: number) {
+    return this.getRepo().find({
       where: { stage: { id: stage } },
       relations: ['contact'],
       skip: size,
       take: 20,
-      order: { createdAt: -1 },
+      order: { createdAt: 'DESC' },
     });
   }
 
-  create = async (
-    { contact: cnt, orders, deal_stage_id, ...deal }: DealCreateDto,
-    user: User,
-  ) => {
-    try {
-      const { model: contact, new: isNewContact } =
-        await this.contactService.findOrCreate(cnt);
-      const body = {
-        ...deal,
-        stage: { id: deal_stage_id },
-        contact: contact,
-        ...deal,
-      } as Deal;
+  async getById(id: number) {
+    return this.getRepo().findOne({
+      where: { id },
+      relations: ['contact', 'orders', 'region', 'district'],
+    });
+  }
 
-      const document = await this.dealRepo.save(body);
-      await this.#addChildTables(document, orders);
-      await this.newLead(document);
+  async create(dto: DealCreateDto, user: User) {
+    try {
+      const { model: contact } = await this.contactService.findOrCreate(
+        dto.contact,
+      );
+      const savedDeal = await this.getRepo().save({
+        ...dto,
+        contact,
+        title: dto.title ?? undefined,
+      });
+
+      await this.dealOrdersService.addOrders(savedDeal, dto.orders);
+      this.emitSocket('add-deal', savedDeal, savedDeal.stage.id);
+
       await this.activityService.createActivity(
         {
-          deal_id: document.id,
+          deal_id: savedDeal.id,
           type: DealActivityType.ACTION,
           is_pin: false,
-          metadata: {
-            action: 'create',
-          },
+          metadata: { action: 'create' },
         },
         user.id,
       );
-      return document;
-    } catch (e) {
-      console.log(e);
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
-    }
-  };
 
-  update = async (
-    { contact: cnt, orders, deal_stage_id, ...deal }: DealUpdateDto,
-    id: number,
+      return savedDeal;
+    } catch (e) {
+      throw new HttpException(
+        e?.message ?? 'Error creating deal',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async update(dto: DealUpdateDto, id: number, user_id: number) {
+    const document = await this.getRepo().findOne({
+      where: { id },
+      relations: ['contact'],
+    });
+
+    if (!document)
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+
+    const { model: contact } = await this.contactService.findOrCreate(
+      dto.contact,
+    );
+    const changes = await this.detectChanges(document, dto, contact);
+
+    const old_stage_id = document.stage_id;
+    Object.assign(document, {
+      ...dto,
+      contact,
+      stage_id: dto.stage_id,
+      tags: dto.tags ?? [],
+    });
+
+    await this.getRepo().save(document);
+    await this.dealOrdersService.addOrders(document, dto.orders, true);
+    await this.handleStageChange(old_stage_id, dto.stage_id, document, user_id);
+
+    if (changes.length) {
+      await this.activityService.createActivity(
+        {
+          deal_id: document.id,
+          type: DealActivityType.EDIT,
+          is_pin: false,
+          metadata: changes,
+        },
+        user_id,
+      );
+    }
+
+    return document;
+  }
+
+  async changeStageByIds(
+    ids: number[],
+    stage_id: number,
+    old_stage_id: number,
     user_id: number,
-  ) => {
-    try {
-      const { model: contact, new: isNewContact } =
-        await this.contactService.findOrCreate(cnt);
-      const document = await this.dealRepo.findOne({
-        where: { id },
-        relations: ['contact'],
-      });
-      if (!document) {
-        throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
-      }
+  ) {
+    await this.getRepo().update({ id: In(ids) }, { stage_id });
 
-      const changes: { field: string; old_value: string; new_value: string }[] =
-        [];
+    const [fromStage, toStage] = await this.dealStageService.getStageNames([
+      old_stage_id,
+      stage_id,
+    ]);
 
-      for (const key in deal) {
-        if (document[key] !== deal[key] && key != 'tags') {
-          changes.push({
-            field: key,
-            old_value: document[key],
-            new_value: deal[key],
-          });
-        }
-      }
-      if (contact.id !== document.contact.id) {
-        changes.push({
-          field: 'contact',
-          old_value: document.contact.name,
-          new_value: contact.name,
-        });
-      }
-
-      const old_stage_id = document.stage_id;
-      document.title = deal.title ?? '';
-      document.contact = contact;
-      document.stage_id = deal_stage_id;
-      document.tags = deal.tags ?? [];
-      document.summa = deal.summa ?? 0;
-      document.deliveryman_id = deal.deliveryman_id ?? null;
-      document.delivery_date = deal.delivery_date ?? null;
-      document.region_id = deal.region_id ?? null;
-      document.district_id = deal.district_id ?? null;
-      document.address = deal.address ?? '';
-      document.comment = deal.comment ?? '';
-      await this.dealRepo.save(document);
-      await this.#addChildTables(document, orders, true);
-      await this.updateLead(old_stage_id, deal_stage_id, document, user_id);
-      if (changes.length > 0) {
-        await this.activityService.createActivity(
-          {
-            deal_id: document.id,
-            type: DealActivityType.EDIT,
-            is_pin: false,
-            metadata: changes,
-          },
-          user_id,
-        );
-      }
-      return document;
-    } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
-    }
-  };
-
-  getById = async (id: number) => {
-    try {
-      return await this.dealRepo.findOne({
-        where: { id },
-        relations: ['contact', 'orders', 'region', 'district'],
-      });
-    } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
-    }
-  };
-
-  updateStage = async (
-    { id }: Deal,
-    deal_stage_id: number,
-    user_id: number,
-  ) => {
-    try {
-      const model = await this.dealRepo.findOneBy({ id });
-      if (model) {
-        const from_stage_name = await this.dealStageService.findByIds([
-          model.stage_id,
-          deal_stage_id,
-        ]);
-        await this.activityService.createActivity(
-          {
-            deal_id: id,
-            type: DealActivityType.STAGE_CHANGE,
-            is_pin: false,
-            metadata: {
-              from_stage:
-                from_stage_name.find((item) => item.id === model.stage_id)
-                  ?.name ?? '',
-              to_stage:
-                from_stage_name.find((item) => item.id === deal_stage_id)
-                  ?.name ?? '',
-            },
-          },
-          user_id,
-        );
-        return await this.dealRepo.update(id, {
-          stage: { id: deal_stage_id },
-        });
-      }
-    } catch (e) {
-      // throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
-    }
-  };
-
-  #addChildTables = async (
-    model: Deal,
-    orders: OrdersDto[],
-    isUpdate: boolean = false,
-  ) => {
-    if (isUpdate) await this.#deleteChildTables(model.id);
-    const oTables = orders.map((item) => ({
-      ...item,
-      deal_id: model.id,
+    const activities = ids.map((id) => ({
+      deal_id: id,
+      is_pin: false,
+      type: DealActivityType.STAGE_CHANGE,
+      metadata: { from_stage: fromStage, to_stage: toStage },
     }));
 
-    if (oTables.length > 0) {
-      await this.orderRepo.insert(oTables);
+    await this.activityService.createActivity(activities, user_id);
+    return 'ok';
+  }
+
+  private async detectChanges(
+    old: Deal,
+    updated: Partial<Deal | DealCreateDto | DealUpdateDto>,
+    contact: any,
+  ) {
+    const changes: { field: string; old_value: string; new_value: string }[] =
+      [];
+
+    for (const key of Object.keys(updated)) {
+      const oldValue = old[key];
+      const newValue = updated[key];
+
+      if (key === 'assigned_user_id' && oldValue !== newValue) {
+        const users = await this.usersService.getAllByIds([
+          oldValue,
+          newValue ?? -1,
+        ]);
+        changes.push({
+          field: key,
+          old_value: users.find((u) => u.id === oldValue)?.fullName ?? '',
+          new_value: users.find((u) => u.id === newValue)?.fullName ?? '',
+        });
+      } else if (key === 'deliveryman_id' && oldValue !== newValue) {
+        const delivery = await this.deliveryManService.getAllByIds([
+          oldValue,
+          newValue,
+        ]);
+        changes.push({
+          field: key,
+          old_value: delivery.find((d) => d.id === oldValue)?.name ?? '',
+          new_value: delivery.find((d) => d.id === newValue)?.name ?? '',
+        });
+      } else if (key === 'delivery_date' && oldValue !== newValue) {
+        changes.push({
+          field: key,
+          old_value: oldValue?.toString() ?? '',
+          new_value: newValue?.toString() ?? '',
+        });
+      } else if (!['tags'].includes(key) && oldValue !== newValue) {
+        changes.push({ field: key, old_value: oldValue, new_value: newValue });
+      }
     }
-  };
 
-  #deleteChildTables = async (id: number) => {
-    await this.orderRepo.delete({ deal: { id } });
-  };
-
-  private newLead = async (deal: Deal) => {
-    if (this.crmSocketServer) {
-      this.crmSocketServer.emit('add-deal', {
-        deal,
-        deal_stage_id: deal.stage.id,
+    if (old.contact.id !== contact.id) {
+      changes.push({
+        field: 'contact',
+        old_value: old.contact.name,
+        new_value: contact.name,
       });
     }
-  };
-  private updateLead = async (
+
+    return changes;
+  }
+
+  private emitSocket(event: string, deal: Deal, stage_id: number) {
+    this.crmSocketServer?.emit(event, { deal, deal_stage_id: stage_id });
+  }
+
+  private async handleStageChange(
     old_stage_id: number,
     new_stage_id: number,
     deal: Deal,
     user_id: number,
-  ) => {
-    if (this.crmSocketServer) {
-      this.crmSocketServer.emit('update-deal', {
-        deal,
-        old_stage_id,
-        new_stage_id,
-      });
-      if (old_stage_id === new_stage_id) return;
-      const from_stage_name = await this.dealStageService.findByIds([
+  ) {
+    this.emitSocket('update-deal', deal, new_stage_id);
+
+    if (old_stage_id !== new_stage_id) {
+      const [fromStage, toStage] = await this.dealStageService.getStageNames([
         old_stage_id,
         new_stage_id,
       ]);
@@ -243,17 +235,10 @@ export class DealService extends BaseService<Deal> {
           deal_id: deal.id,
           type: DealActivityType.STAGE_CHANGE,
           is_pin: false,
-          metadata: {
-            from_stage:
-              from_stage_name.find((item) => item.id === old_stage_id)?.name ??
-              '',
-            to_stage:
-              from_stage_name.find((item) => item.id === new_stage_id)?.name ??
-              '',
-          },
+          metadata: { from_stage: fromStage, to_stage: toStage },
         },
         user_id,
       );
     }
-  };
+  }
 }

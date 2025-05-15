@@ -6,7 +6,7 @@ import {
   Index,
   JoinColumn,
 } from 'typeorm';
-import { Deal } from './deal.entity';
+import { Deal } from '../../deal/entities/deal.entity';
 import { Products } from '../../products/entities/products.entity';
 
 const transformPrice = {

@@ -2,49 +2,18 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { DeepPartial, EntityTarget, ObjectLiteral } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { DatabaseService } from '../libs/database/database.service';
 
-export class BaseService<T extends ObjectLiteral> {
+export abstract class BaseService<T extends ObjectLiteral> {
   private readonly saltRounds = 10;
 
-  constructor(private readonly model: Repository<T>) {}
+  constructor(
+    protected readonly databaseService: DatabaseService,
+    private readonly entity: EntityTarget<T>,
+  ) {}
 
-  async createBase(createDto: DeepPartial<T>): Promise<T> {
-    return await this.model.save(createDto);
-  }
-
-  async findAllBase(): Promise<T[]> {
-    return await this.model.find();
-  }
-
-  async findByIdBase(query: FindOptionsWhere<T>): Promise<T> {
-    const data = await this.model.findOne({
-      where: query,
-    });
-    if (!data) {
-      throw new HttpException('data not found', HttpStatus.NOT_FOUND);
-    }
-    return data;
-  }
-
-  async updateByIdBase(id: string, updateDto: DeepPartial<T>): Promise<T> {
-    const updatedData = await this.model.preload({
-      id,
-      ...updateDto,
-    });
-
-    if (!updatedData) {
-      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
-    }
-
-    return this.model.save(updatedData);
-  }
-
-  async deleteByIdBase(id: string): Promise<string> {
-    const result = await this.model.delete(id);
-    if (result.affected === 0) {
-      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
-    }
-    return 'data has been deleted';
+  protected getRepo(): Repository<T> {
+    return this.databaseService.getDataSource().getRepository(this.entity);
   }
 
   async hashPassword(password: string): Promise<string> {
@@ -53,5 +22,39 @@ export class BaseService<T extends ObjectLiteral> {
 
   async comparePassword(password: string, hash: string): Promise<boolean> {
     return await bcrypt.compare(password, hash);
+  }
+
+  // crud
+  async _base_create(body: DeepPartial<T>): Promise<Omit<T, 'password'>> {
+    const { password, ...model } = await this.getRepo().save(body);
+    return model;
+  }
+
+  async _base_findAll(where?: FindOptionsWhere<T>): Promise<T[]> {
+    return await this.getRepo().find({ where });
+  }
+
+  async _base_findById(id: number): Promise<T> {
+    const model = await this.getRepo().findOneBy({ id } as any);
+    if (!model) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+    return model;
+  }
+
+  async _base_update(body: DeepPartial<T>, id: number): Promise<T> {
+    const model = await this.getRepo().findOneBy({ id } as any);
+    if (!model) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+    return await this.getRepo().save({ ...model, ...body });
+  }
+
+  async _base_delete(id: number): Promise<T> {
+    const model = await this.getRepo().findOneBy({ id } as any);
+    if (!model) {
+      throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
+    }
+    return await this.getRepo().remove(model);
   }
 }

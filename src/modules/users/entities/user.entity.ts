@@ -1,4 +1,3 @@
-import { ActionsHistory } from '../../actionsHistory/entities/actionsHistory.entity';
 import { UserStageOrder } from '../../deal-stage/entities/userStageOrder.entity';
 import {
   Entity,
@@ -12,6 +11,11 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
+const ColumnNumericTransformer = {
+  to: (value: string) => value,
+  from: (value: string): number => parseFloat(value),
+};
 
 @Entity({
   comment: 'User entity',
@@ -60,8 +64,9 @@ export class User {
     nullable: false,
     precision: 17,
     scale: 3,
+    transformer: ColumnNumericTransformer,
   })
-  salary: string;
+  salary: string | number;
 
   @Column({
     type: 'decimal',
@@ -69,8 +74,9 @@ export class User {
     nullable: false,
     precision: 17,
     scale: 3,
+    transformer: ColumnNumericTransformer,
   })
-  sales_kpi: string;
+  sales_kpi: string | number;
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -89,9 +95,6 @@ export class User {
     default: null,
   })
   deletedAt: Date;
-
-  @OneToMany(() => ActionsHistory, (actionsHistory) => actionsHistory.users)
-  actionsHistory: ActionsHistory[];
 
   @OneToMany(() => UserStageOrder, (stage) => stage.user)
   stage: UserStageOrder[];

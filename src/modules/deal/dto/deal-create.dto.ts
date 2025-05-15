@@ -40,7 +40,7 @@ export class DealCreateDto {
 
   @ApiProperty({ example: 1 })
   @IsNumber()
-  deal_stage_id: number;
+  stage_id: number;
 
   @ApiPropertyOptional({ type: [String], example: ['important', 'urgent'] })
   @IsOptional()
@@ -95,4 +95,9 @@ export class DealCreateDto {
   @IsString()
   @MaxLength(300)
   comment?: string | null;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  assigned_user_id: number | null;
 }

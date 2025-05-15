@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { ClsService } from 'nestjs-cls';
 import { I18nService } from 'nestjs-i18n';
+import { TENANT_KEY } from 'src/libs/tenancy/tenancy.constants';
 import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
@@ -21,6 +23,7 @@ export class AuthMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     try {
       const authHeader = req.headers['authorization'];
+      const tenantId = req.headers['x-tenant-id'];
       const Bearer = 'Bearer ';
       if (!authHeader || !authHeader.startsWith(Bearer)) {
         throw new HttpException(
@@ -36,10 +39,17 @@ export class AuthMiddleware implements NestMiddleware {
           HttpStatus.UNAUTHORIZED,
         );
       }
-      const secretKey = process.env.SECRET_JWT || 'secret';
+      const secretKey = process.env.SECRET_JWT! + tenantId;
+
       const decoded = jwt.verify(token, secretKey);
 
       if (!decoded) {
+        throw new HttpException(
+          await this.i18n.translate('errors.invalid_or_expired_token'),
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      if (decoded['tenantId'] !== tenantId) {
         throw new HttpException(
           await this.i18n.translate('errors.invalid_or_expired_token'),
           HttpStatus.UNAUTHORIZED,

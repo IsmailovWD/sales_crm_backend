@@ -1,4 +1,4 @@
-import { DealOrders } from '../../deal/entities/dealOrders.entity';
+import { DealOrders } from '../../deal-orders/entities/dealOrders.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

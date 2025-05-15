@@ -6,13 +6,10 @@ import { DealActivityService } from './deal-activity.service';
 import { DealActivityController } from './deal-activity.controller';
 import { AuthMiddleware } from 'src/middleware/auth.middleware';
 import { UsersModule } from '../users/users.module';
+import { DatabaseModule } from '../../libs/database/database.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([DealActivity]),
-    ContactsModule,
-    UsersModule,
-  ],
+  imports: [ContactsModule, UsersModule, DatabaseModule],
   controllers: [DealActivityController],
   providers: [DealActivityService],
   exports: [DealActivityService],

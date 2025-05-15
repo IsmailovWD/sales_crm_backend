@@ -36,11 +36,11 @@ export class CrmGateway extends BaseGateway implements OnGatewayInit {
 
   @SubscribeMessage('add-deal')
   handleAddLead(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
-    this.dealService.updateStage(
-      data.deal,
-      data.deal_stage_id,
-      client.data.user.id,
-    );
+    // this.dealService.updateStage(
+    //   data.deal,
+    //   data.deal_stage_id,
+    //   client.data.user.id,
+    // );
     client.broadcast.emit('add-deal', data);
   }
 }

@@ -4,31 +4,33 @@ import { CreateRegionsDto } from './dto/create-regions.dto';
 import { UpdateRegionsDto } from './dto/update-regions.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DatabaseService } from '../../libs/database/database.service';
+import { BaseService } from '../base.service';
 
 @Injectable()
-export class RegionsService {
-  constructor(
-    @InjectRepository(Regions) private RegionsRepo: Repository<Regions>,
-  ) {}
+export class RegionsService extends BaseService<Regions> {
+  constructor(protected readonly databaseService: DatabaseService) {
+    super(databaseService, Regions);
+  }
 
   async getAll() {
-    return await this.RegionsRepo.find();
+    return await this.getRepo().find();
   }
   async create(body: CreateRegionsDto) {
-    return await this.RegionsRepo.save(body);
+    return await this.getRepo().save(body);
   }
 
   async update(body: UpdateRegionsDto, id: number) {
-    const data = await this.RegionsRepo.update({ id }, body);
+    const data = await this.getRepo().update({ id }, body);
     return body;
   }
 
   async delete(id: number) {
-    return await this.RegionsRepo.delete({ id: id });
+    return await this.getRepo().delete({ id: id });
   }
 
   async getByIdWithDistricts(id: number) {
-    const region = await this.RegionsRepo.findOne({
+    const region = await this.getRepo().findOne({
       where: { id },
       relations: ['districts'],
     });
@@ -47,7 +49,7 @@ export class RegionsService {
 
   async getAllWithDistricts() {
     const regions = (
-      await this.RegionsRepo.find({
+      await this.getRepo().find({
         select: ['id', 'name'],
         relations: ['districts'],
       })

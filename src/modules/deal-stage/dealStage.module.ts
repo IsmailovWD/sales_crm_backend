@@ -1,4 +1,4 @@
-import { Module, NestModule } from '@nestjs/common';
+import { forwardRef, Module, NestModule } from '@nestjs/common';
 import { DealStage } from './entities/dealStage.entity';
 import { DealStageService } from './dealStage.service';
 import { DealStageController } from './dealStage.controller';
@@ -7,14 +7,9 @@ import { UsersModule } from '../users/users.module';
 import { DealModule } from '../deal/deal.module';
 import { UserStageOrder } from './entities/userStageOrder.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../users/entities/user.entity';
-import { Deal } from '../deal/entities/deal.entity';
+import { DatabaseModule } from '../../libs/database/database.module';
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([DealStage, UserStageOrder, User, Deal]),
-    UsersModule,
-    DealModule,
-  ],
+  imports: [UsersModule, forwardRef(() => DealModule), DatabaseModule],
   providers: [DealStageService],
   controllers: [DealStageController],
   exports: [DealStageService],

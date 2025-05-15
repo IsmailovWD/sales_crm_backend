@@ -6,10 +6,12 @@ import {
   Request,
   Param,
   Query,
+  Put,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -35,5 +37,10 @@ export class UsersController {
   @Get('/me')
   async getMe(@Request() req) {
     return req.user;
+  }
+
+  @Put('id/:id')
+  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
+    return this.usersService.update(+id, body);
   }
 }

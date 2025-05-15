@@ -41,7 +41,7 @@ async function bootstrap() {
       Logger.log(`🌎 Server running on port ${process.env.PORT}`);
     })
     .catch((error) => {
-      Logger.error(`❌ Server failed to start: ${error}`);
+      Logger.error(`❌ Server failed to start: ${error} ${error.stack}`);
     });
 }
 bootstrap();

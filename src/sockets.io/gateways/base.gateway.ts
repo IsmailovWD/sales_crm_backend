@@ -14,15 +14,22 @@ export class BaseGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(client: Socket) {
     try {
       const token: string | undefined = client.handshake.auth?.token;
+      const tenantId: string | undefined =
+        client.handshake.auth?.['x-tenant-id'];
       if (!token) {
         Logger.error(`Unauthorized client rejected: ${client.id}`);
         client.disconnect();
         return;
       }
-      const { sub, username } = jwt.verify(
-        token,
-        config.SECRET_JWT ?? 'secret',
-      ) as any;
+      const {
+        sub,
+        username,
+        tenantId: _tenantId,
+      } = jwt.verify(token, config.SECRET_JWT! + tenantId) as any;
+
+      if (_tenantId !== tenantId) {
+        throw new Error("Tenant id doesn't match");
+      }
 
       Logger.log(
         `Client connected namespace ${client.nsp.name}: ${client.id} with sub: ${sub} username: ${username}`,
@@ -30,6 +37,7 @@ export class BaseGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.user = {
         id: sub,
         username: username,
+        tenantId: tenantId,
       };
     } catch (e) {
       Logger.error(`Unauthorized client rejected: ${client.id}`);

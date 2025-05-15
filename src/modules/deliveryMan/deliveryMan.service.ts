@@ -4,15 +4,13 @@ import { CreateDeliveryManDto } from './dto/create-deliveryMan.dto';
 import { UpdateDeliveryManDto } from './dto/update-deliveryMan.dto';
 import { BaseService } from '../base.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, FindOptionsWhere, Repository } from 'typeorm';
+import { Brackets, FindOptionsWhere, In, Repository } from 'typeorm';
+import { DatabaseService } from '../../libs/database/database.service';
 
 @Injectable()
 export class DeliveryManService extends BaseService<DeliveryMan> {
-  constructor(
-    @InjectRepository(DeliveryMan)
-    private DeliveryManModel: Repository<DeliveryMan>,
-  ) {
-    super(DeliveryManModel);
+  constructor(protected readonly databaseService: DatabaseService) {
+    super(databaseService, DeliveryMan);
   }
 
   async getAll(size: number, page: number, search?: string) {
@@ -26,7 +24,7 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
         })
       : {};
 
-    const [data, count] = await this.DeliveryManModel.findAndCount({
+    const [data, count] = await this.getRepo().findAndCount({
       where: filter,
       skip: (page - 1) * size,
       take: size,
@@ -38,7 +36,7 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
   async create(body: CreateDeliveryManDto) {
     body.password = await this.hashPassword(body.password);
 
-    const { password, ...model } = await this.DeliveryManModel.save(body);
+    const { password, ...model } = await this.getRepo().save(body);
 
     return model;
   }
@@ -51,7 +49,7 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
         delete body.password;
       }
 
-      const model = await this.DeliveryManModel.findOneBy({ id });
+      const model = await this.getRepo().findOneBy({ id });
 
       if (!model) {
         throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
@@ -68,7 +66,7 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
       model.werehouse_available = body.werehouse_available;
       if (body.password) model.password = body.password;
 
-      await this.DeliveryManModel.save(model);
+      await this.getRepo().save(model);
 
       return await this.findById({ id });
     } catch (e) {
@@ -77,11 +75,11 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
   }
 
   async delete(id: number) {
-    return await this.DeliveryManModel.delete({ id });
+    return await this.getRepo().delete({ id });
   }
 
   async findById(query: FindOptionsWhere<DeliveryMan>) {
-    const data = await this.DeliveryManModel.findOne({
+    const data = await this.getRepo().findOne({
       where: query,
       relations: ['region', 'district'],
     });
@@ -89,5 +87,9 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
       throw new HttpException('data not found', HttpStatus.NOT_FOUND);
     }
     return data;
+  }
+
+  async getAllByIds(ids: number[]) {
+    return await this.getRepo().findBy({ id: In(ids) });
   }
 }

@@ -1,15 +1,15 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Products } from './entities/products.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DatabaseService } from '../../libs/database/database.service';
+import { BaseService } from '../base.service';
 
 @Injectable()
-export class ProductsService {
-  constructor(
-    @InjectRepository(Products) private productRepo: Repository<Products>,
-  ) {}
+export class ProductsService extends BaseService<Products> {
+  constructor(protected readonly databaseService: DatabaseService) {
+    super(databaseService, Products);
+  }
   async getAllProducts(
     size: number,
     page: number,
@@ -18,7 +18,7 @@ export class ProductsService {
     try {
       const filter = search ? { name: search } : {};
 
-      const [data, count] = await this.productRepo.findAndCount({
+      const [data, count] = await this.getRepo().findAndCount({
         where: filter,
         select: ['id', 'name', 'price', 'body_summa'],
         skip: (page - 1) * size,
@@ -34,7 +34,7 @@ export class ProductsService {
 
   async productCreate(body: CreateProductDto) {
     try {
-      return await this.productRepo.save(body);
+      return await this.getRepo().save(body);
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }
@@ -42,7 +42,7 @@ export class ProductsService {
 
   async productUpdate(body: UpdateProductDto, id: number) {
     try {
-      const model = await this.productRepo.findOneBy({ id });
+      const model = await this.getRepo().findOneBy({ id });
 
       if (!model) {
         throw new HttpException('Data not found', HttpStatus.NOT_FOUND);
@@ -52,7 +52,7 @@ export class ProductsService {
       model.price = body.price ?? 0;
       model.body_summa = body.body_summa ?? 0;
 
-      return await this.productRepo.save(model);
+      return await this.getRepo().save(model);
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }
@@ -60,7 +60,7 @@ export class ProductsService {
 
   async getAllWithBalance() {
     try {
-      return await this.productRepo.find();
+      return await this.getRepo().find();
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }

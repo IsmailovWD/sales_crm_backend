@@ -13,6 +13,7 @@ import {
 import { DealService } from './deal.service';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DealCreateDto } from './dto/deal-create.dto';
+import { ChangeStageByIds } from './dto/dto.changeStageByIds.dto';
 
 @ApiTags('CrmLead')
 @ApiBearerAuth()
@@ -38,5 +39,15 @@ export class DealController {
   @Get('/id/:id')
   getById(@Param('id') id: string) {
     return this.dealService.getById(+id);
+  }
+
+  @Patch('/change-stage-by-ids')
+  changeStageByIds(@Body() data: ChangeStageByIds, @Request() req) {
+    return this.dealService.changeStageByIds(
+      data.ids,
+      data.stage_id,
+      data.old_stage_id,
+      req.user.id,
+    );
   }
 }

@@ -5,9 +5,9 @@ import { DistrictsController } from './districts.controller';
 import { AuthMiddleware } from '../../middleware/auth.middleware';
 import { UsersModule } from '../users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
+import { DatabaseModule } from '../../libs/database/database.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([Districts]), UsersModule],
+  imports: [UsersModule, DatabaseModule],
   providers: [DistrictsService],
   controllers: [DistrictsController],
   exports: [DistrictsService],

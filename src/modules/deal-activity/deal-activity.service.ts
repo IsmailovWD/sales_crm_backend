@@ -1,25 +1,44 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { DealActivity } from './entities/deal-activity.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { CreateDealActivityDto } from './dto/create-deal-activity.dto';
 import { User } from '../users/entities/user.entity';
 import * as _ from 'lodash';
+import { DatabaseService } from '../../libs/database/database.service';
+import { BaseService } from '../base.service';
 @Injectable()
-export class DealActivityService {
-  constructor(
-    @InjectRepository(DealActivity)
-    private dealActivityRepo: Repository<DealActivity>,
-  ) {}
+export class DealActivityService extends BaseService<DealActivity> {
+  constructor(protected readonly databaseService: DatabaseService) {
+    super(databaseService, DealActivity);
+  }
 
-  createActivity = async (deal: CreateDealActivityDto, user_id: number) => {
+  createActivity = async (
+    deal: CreateDealActivityDto | CreateDealActivityDto[],
+    user_id: number,
+  ) => {
     try {
-      const newBody = { ...deal, user_id };
+      let newBody: (CreateDealActivityDto & { user_id: number })[] = [];
+      if (Array.isArray(deal)) {
+        newBody = deal.map((item) => {
+          return {
+            ...item,
+            user_id: user_id,
+          };
+        });
+      } else {
+        newBody = [
+          {
+            ...deal,
+            user_id: user_id,
+          },
+        ];
+      }
 
-      const activity = await this.dealActivityRepo.save(newBody);
+      const activity = await this.getRepo().save(newBody);
 
-      return await this.dealActivityRepo.findOneOrFail({
-        where: { id: activity.id },
+      return await this.getRepo().findOneOrFail({
+        where: { id: In(activity.map((item) => item.id)) },
         relations: { user: true },
       });
     } catch (error) {
@@ -32,7 +51,7 @@ export class DealActivityService {
     limit: number,
     deal_id: number,
   ) => {
-    const activities = await this.dealActivityRepo.find({
+    const activities = await this.getRepo().find({
       where: {
         deal_id: deal_id,
         deleted_at: IsNull(),

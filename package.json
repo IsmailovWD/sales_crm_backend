@@ -39,6 +39,7 @@
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.7",
     "lodash": "^4.17.21",
+    "nestjs-cls": "^5.4.3",
     "nestjs-i18n": "^10.5.1",
     "nestjs-seeder": "^0.3.2",
     "pg": "^8.14.1",
