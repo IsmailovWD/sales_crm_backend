@@ -1,9 +1,13 @@
+/* eslint-disable */
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { I18nService, I18nValidationPipe } from 'nestjs-i18n';
 import { setupSwagger } from './config/swagger.config';
 import { HttpExceptionFilter } from './common/filters/exception.filter';
+import { join } from 'path';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -34,6 +38,17 @@ async function bootstrap() {
       forbidNonWhitelisted: false,
     }),
   );
+
+  app.use('/:tenantId/:filename', (req, res, next) => {
+    // const hTenantId = req.headers['x-tenant-id'];
+    const { tenantId, filename } = req.params;
+    if (tenantId == 'api') {
+      next();
+      return;
+    }
+    const path = join(__dirname, '..', '..', 'uploads', tenantId, filename);
+    express.static(path)(req, res, next);
+  });
 
   await app
     .listen(process.env.PORT as unknown as number)

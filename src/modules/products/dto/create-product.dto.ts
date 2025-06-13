@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsNotEmpty()
@@ -14,4 +20,7 @@ export class CreateProductDto {
   @IsNumber()
   @Min(0)
   body_summa: number;
+
+  @IsNumber()
+  branch_id: number;
 }

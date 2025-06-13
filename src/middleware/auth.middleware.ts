@@ -1,16 +1,15 @@
+/* eslint-disable */
+
 import {
   Injectable,
   NestMiddleware,
-  UnauthorizedException,
   Inject,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { ClsService } from 'nestjs-cls';
 import { I18nService } from 'nestjs-i18n';
-import { TENANT_KEY } from 'src/libs/tenancy/tenancy.constants';
 import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
@@ -23,7 +22,7 @@ export class AuthMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     try {
       const authHeader = req.headers['authorization'];
-      const tenantId = req.headers['x-tenant-id'];
+      const tenantId = req.headers['x-tenant-id'] as string;
       const Bearer = 'Bearer ';
       if (!authHeader || !authHeader.startsWith(Bearer)) {
         throw new HttpException(

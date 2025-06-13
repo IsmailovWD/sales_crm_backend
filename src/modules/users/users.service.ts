@@ -7,10 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DatabaseService } from '../../libs/database/database.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BaseService } from '../base.service';
+import { BranchService } from '../branch/branch.service';
 
 @Injectable()
 export class UsersService extends BaseService<User> {
-  constructor(protected readonly databaseService: DatabaseService) {
+  constructor(
+    protected readonly databaseService: DatabaseService,
+    private readonly branchService: BranchService,
+  ) {
     super(databaseService, User);
   }
 
@@ -22,6 +26,7 @@ export class UsersService extends BaseService<User> {
     const data = {
       ...body,
       password: await this.hashPassword(body.password),
+      branch_ids: body.branch_ids.map((id) => ({ id })),
     };
 
     const { password, ...newUser } = await this.getRepo().save(data);
@@ -65,8 +70,9 @@ export class UsersService extends BaseService<User> {
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.getRepo().findOneBy({
-      id,
+    const user = await this.getRepo().findOne({
+      where: { id },
+      relations: ['branches', 'branches.pipeline'],
     });
 
     if (!user) {
@@ -77,11 +83,11 @@ export class UsersService extends BaseService<User> {
   }
 
   async findOneByUsername(username: string): Promise<User> {
-    const user = await this.getRepo()
-      .createQueryBuilder('user')
-      .select(['user.password', 'user.username', 'user.id'])
-      .where('user.username = :username', { username })
-      .getOne();
+    const user = await this.getRepo().findOne({
+      select: ['id', 'username', 'fullName', 'email', 'password'],
+      where: { username },
+      relations: ['branches', 'branches.pipeline'],
+    });
 
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -103,6 +109,7 @@ export class UsersService extends BaseService<User> {
     user.email = body.email;
     user.salary = body.salary;
     user.sales_kpi = body.sales_kpi;
+    user.branches = await this.branchService.getAllByIds(body.branch_ids);
     if (body.password) {
       user.password = await this.hashPassword(body.password);
     }

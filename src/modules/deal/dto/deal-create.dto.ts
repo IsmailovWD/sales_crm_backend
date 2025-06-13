@@ -100,4 +100,7 @@ export class DealCreateDto {
   @IsOptional()
   @IsNumber()
   assigned_user_id: number | null;
+
+  @IsNumber()
+  branch_id: number;
 }

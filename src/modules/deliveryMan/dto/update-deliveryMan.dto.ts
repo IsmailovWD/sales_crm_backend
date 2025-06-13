@@ -46,4 +46,7 @@ export class UpdateDeliveryManDto {
 
   @IsBoolean()
   werehouse_available: boolean;
+
+  @IsNumber({}, { each: true })
+  branch_ids: number[];
 }

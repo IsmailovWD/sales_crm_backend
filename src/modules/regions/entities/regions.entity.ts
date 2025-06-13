@@ -33,11 +33,8 @@ export class Regions {
   @OneToMany(() => Districts, (district) => district.region)
   children: Districts[];
 
-  @OneToMany(() => DeliveryMan, (deliveryMan) => deliveryMan.region) // Regionga tegishli DeliveryManlar
+  @OneToMany(() => DeliveryMan, (deliveryMan) => deliveryMan.region)
   deliveryMan: DeliveryMan[];
-
-  @OneToMany(() => Contacts, (contact) => contact.region)
-  contacts: Contacts[];
 
   //relations
   @OneToMany(() => Deal, (deal) => deal.region)

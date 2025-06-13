@@ -38,23 +38,23 @@ const DEFAULT = [
 
 import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
-import { DealStage } from '../modules/deal-stage/entities/dealStage.entity';
-import { SeederMeta } from '../modules/META/seederMeta.entity';
+import { DealStage } from '../src/modules/deal-stage/entities/dealStage.entity';
+// import { SeederMeta } from '../src/modules/META/seederMeta.entity';
 
 export class DealStageSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<any> {
     const name = DealStageSeeder.name;
-    const exits = await dataSource.getRepository(SeederMeta).findOneBy({
-      name,
-    });
+    // const exits = await dataSource.getRepository(SeederMeta).findOneBy({
+    //   name,
+    // });
 
-    if (exits) {
-      return;
-    }
+    // if (exits) {
+    //   return;
+    // }
     await dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(DealStage);
       await repo.save(DEFAULT);
-      await manager.getRepository(SeederMeta).save({ name });
+      // await manager.getRepository(SeederMeta).save({ name });
     });
   }
 }

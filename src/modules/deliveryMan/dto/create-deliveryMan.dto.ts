@@ -9,6 +9,7 @@ import {
   IsNumber,
   Min,
   IsInt,
+  ArrayMinSize,
 } from 'class-validator';
 
 export class CreateDeliveryManDto {
@@ -46,4 +47,8 @@ export class CreateDeliveryManDto {
 
   @IsBoolean()
   werehouse_available: boolean;
+
+  @IsNumber({}, { each: true })
+  @ArrayMinSize(1)
+  branch_ids: number[];
 }

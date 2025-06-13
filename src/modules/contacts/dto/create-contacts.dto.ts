@@ -1,4 +1,5 @@
 import {
+  ArrayMinSize,
   IsBoolean,
   IsEmpty,
   IsNotEmpty,
@@ -8,7 +9,6 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
-import { IsNull } from 'typeorm';
 
 export class CreateContactsDto {
   @IsNotEmpty()
@@ -35,11 +35,7 @@ export class CreateContactsDto {
   @IsString()
   country_code: string;
 
-  @ValidateIf((o) => o.region_id !== null)
+  @IsNotEmpty()
   @IsNumber()
-  region_id: number;
-
-  @ValidateIf((o) => o.district_id !== null)
-  @IsNumber()
-  district_id: number;
+  branch_id: number;
 }

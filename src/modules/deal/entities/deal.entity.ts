@@ -16,6 +16,7 @@ import { DealActivity } from '../../deal-activity/entities/deal-activity.entity'
 import { DeliveryMan } from '../../deliveryMan/entities/deliveryMan.entity';
 import { Regions } from '../../regions/entities/regions.entity';
 import { Districts } from '../../districts/entities/districts.entity';
+import { Branch } from '../../branch/entities/branch.entity';
 
 const ColumnNumericTransformer = {
   to: (value: number) => value,
@@ -93,7 +94,6 @@ export class Deal {
   @Column({ type: 'varchar', nullable: true })
   comment: string | null;
 
-  // join fields
   @OneToMany(() => DealActivity, (activity) => activity.deal)
   activities: DealActivity[];
 

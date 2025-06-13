@@ -203,11 +203,11 @@ export class DealService extends BaseService<Deal> {
     }
 
     if (old.contact.id !== contact.id) {
-      changes.push({
-        field: 'contact',
-        old_value: old.contact.name,
-        new_value: contact.name,
-      });
+      // changes.push({
+      //   field: 'contact',
+      //   old_value: old.contact.contactBranches[0].name,
+      //   new_value: contact.name,
+      // });
     }
 
     return changes;

@@ -6,7 +6,7 @@ import { UserStageOrder } from './entities/userStageOrder.entity';
 import { ChangeDealStageDto } from './dto/change-deal-stage.dto';
 import { Deal } from '../deal/entities/deal.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, In, Repository } from 'typeorm';
+import { EntityManager, FindOptionsWhere, In, Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { DatabaseService } from '../../libs/database/database.service';
 import { DealService } from '../deal/deal.service';
@@ -23,7 +23,7 @@ export class DealStageService extends BaseService<DealStage> {
   ) {
     super(databaseService, DealStage);
   }
-  async getAllDealStageWithDeal(user: User) {
+  async getAllDealStageWithDeal(user: User, pipeline_id: number) {
     try {
       const userStageOrder = await new UserStageOrderService(
         this.databaseService,
@@ -33,21 +33,15 @@ export class DealStageService extends BaseService<DealStage> {
         },
       });
       let result: (DealStage & { totalCount: number })[] = [];
-      const data = await this.getRepo().find();
+      const data = await this.getRepo().find({
+        where: {
+          pipeline: {
+            id: pipeline_id,
+          },
+        },
+      });
       for (let i = 0; i < data.length; i++) {
         const stage = data[i];
-        // const { '0': deals, '1': count } = await this.dealRepo.findAndCount({
-        //   where: {
-        //     stage: {
-        //       id: stage.id,
-        //     },
-        //   },
-        //   relations: ['contact'],
-        //   take: 20,
-        //   order: {
-        //     createdAt: -1,
-        //   },
-        // });
         const deals = await this.dealService.getAll(0, stage.id);
         result.push({
           ...stage,
@@ -118,6 +112,14 @@ export class DealStageService extends BaseService<DealStage> {
           id: In(ids),
         },
       });
+    } catch (e) {
+      throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async bulkCreateStages(body: CreateDealStageDto[], manager?: EntityManager) {
+    try {
+      return await this.getRepo(manager).save(body);
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }

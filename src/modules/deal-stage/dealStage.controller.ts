@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   Put,
+  HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { DealStageService } from './dealStage.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -21,8 +23,15 @@ export class DealStageController {
   constructor(private readonly DealStageService: DealStageService) {}
 
   @Get('/all')
-  async getAllDealStageWithDeals(@Request() req: any) {
-    return this.DealStageService.getAllDealStageWithDeal(req.user);
+  async getAllDealStageWithDeals(
+    @Request() req: any,
+    @Query('pipeline') pipeline: string,
+  ) {
+    const pipeline_id = +pipeline;
+    if (isNaN(pipeline_id) || isFinite(pipeline_id) === false) {
+      throw new HttpException('Pipeline not found', HttpStatus.NOT_FOUND);
+    }
+    return this.DealStageService.getAllDealStageWithDeal(req.user, pipeline_id);
   }
 
   @Get('/all-only-stages')

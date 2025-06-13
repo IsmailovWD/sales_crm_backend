@@ -36,9 +36,6 @@ export class Districts {
   @ManyToOne(() => DeliveryMan, (deliveryMan) => deliveryMan.district)
   deliveryMan: DeliveryMan;
 
-  @OneToMany(() => Contacts, (contact) => contact.district)
-  contacts: Contacts[];
-
   // relations
   @OneToMany(() => Deal, (deal) => deal.district)
   deals: Deal[];

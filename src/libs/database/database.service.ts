@@ -12,6 +12,7 @@ import { ClsService } from 'nestjs-cls';
 import { Tenant } from '../tenancy/entities/tenant.entity';
 import { TENANT_KEY } from '../tenancy/tenancy.constants';
 import { DataSourceConfig } from './datasource.config';
+import { ensureTenantUploadFolder } from 'src/utils/fs-static-folder.utils';
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy, OnModuleInit {
@@ -95,6 +96,7 @@ export class DatabaseService implements OnModuleDestroy, OnModuleInit {
 
     this.tenantConnections.set(tenant.hostnames, dataSource);
     this.logger.log(`Initialized connection ${tenant.database_name}`);
+    ensureTenantUploadFolder(tenant.hostnames);
   }
 
   private async _createDatabaseIfNotExists(database: string) {

@@ -1,3 +1,4 @@
+import { Branch } from '../../branch/entities/branch.entity';
 import { UserStageOrder } from '../../deal-stage/entities/userStageOrder.entity';
 import {
   Entity,
@@ -7,9 +8,8 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
-  OneToOne,
-  ManyToOne,
-  JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
 const ColumnNumericTransformer = {
@@ -95,6 +95,15 @@ export class User {
     default: null,
   })
   deletedAt: Date;
+
+  // join fields
+  @ManyToMany(() => Branch, (branch) => branch.users)
+  @JoinTable({
+    name: 'user_branches',
+    joinColumn: { name: 'user_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'branch_id', referencedColumnName: 'id' },
+  })
+  branches: Branch[];
 
   @OneToMany(() => UserStageOrder, (stage) => stage.user)
   stage: UserStageOrder[];

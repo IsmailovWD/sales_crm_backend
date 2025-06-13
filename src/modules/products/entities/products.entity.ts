@@ -1,3 +1,4 @@
+import { Branch } from '../../branch/entities/branch.entity';
 import { DealOrders } from '../../deal-orders/entities/dealOrders.entity';
 import {
   Entity,
@@ -7,6 +8,10 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
 const ColumnNumericTransformer = {
@@ -53,4 +58,18 @@ export class Products {
 
   @OneToMany(() => DealOrders, (dealOrders) => dealOrders.product)
   orders: DealOrders[];
+
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
+  branch_id: number;
+
+  @ManyToOne(() => Branch, (branch) => branch.products, {
+    nullable: false,
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'branch_id' })
+  branch: Branch;
 }

@@ -8,6 +8,8 @@ import { SocketModule } from './sockets.io/socketIo.module';
 import config from './config/config';
 import { DatabaseModule } from './libs/database/database.module';
 import { TenancyModule } from './libs/tenancy/tenancy.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -25,8 +27,12 @@ import { TenancyModule } from './libs/tenancy/tenancy.module';
         };
       },
     }),
-    SocketModule,
+    // SocketModule,
     ...Object.values(Modules),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'public'),
+      serveRoot: '/default',
+    }),
   ],
   controllers: [],
   providers: [],

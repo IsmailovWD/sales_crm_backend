@@ -28,14 +28,15 @@ export class ProductsController {
   async productUpdate(@Body() body: CreateProductDto, @Param('id') id: string) {
     return this.productService.productUpdate(body, +id);
   }
-  @Get('/:size/:page')
+  @Get('/:branch/:size/:page')
   @ApiQuery({ name: 'search', type: String, required: false })
   async getAllProducts(
     @Param('size') size: string,
     @Param('page') page: string,
+    @Param('branch') branch: string,
     @Query('search') search?: string,
   ) {
-    return this.productService.getAllProducts(+size, +page, search);
+    return this.productService.getAllProducts(+branch, +size, +page, search);
   }
 
   @Get('/with-balance')

@@ -8,17 +8,20 @@ import {
   DeleteDateColumn,
   JoinColumn,
   OneToMany,
+  ManyToMany,
+  JoinTable,
+  OneToOne,
 } from 'typeorm';
 import { Regions } from '../../regions/entities/regions.entity'; // Agar `regionId` bor bo'lsa
 import { Districts } from '../../districts/entities/districts.entity'; // Agar `districtId` bor bo'lsa
 import { Deal } from '../../deal/entities/deal.entity';
-
+import { Branch } from '../../branch/entities/branch.entity';
 @Entity('contacts')
 export class Contacts {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ default: 'Name' })
+  @Column({ default: '' })
   name: string;
 
   @Column({ nullable: true, default: null })
@@ -36,21 +39,8 @@ export class Contacts {
   @Column({ nullable: true, default: null })
   country_code: string;
 
-  @Column({ nullable: true })
-  region_id: number;
-
-  @Column({ nullable: true })
-  district_id: number;
-
-  @ManyToOne(() => Regions, (region) => region.contacts, { nullable: true })
-  @JoinColumn({ name: 'region_id' })
-  region: Regions;
-
-  @ManyToOne(() => Districts, (district) => district.contacts, {
-    nullable: true,
-  })
-  @JoinColumn({ name: 'district_id' })
-  district: Districts;
+  @Column({ nullable: false })
+  branch_id: number;
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -72,4 +62,8 @@ export class Contacts {
 
   @OneToMany(() => Deal, (deal) => deal.contact)
   deals: Deal[];
+
+  @OneToMany(() => Branch, (branch) => branch.contacts)
+  @JoinColumn({ name: 'branch_id' })
+  branches: Branch[];
 }

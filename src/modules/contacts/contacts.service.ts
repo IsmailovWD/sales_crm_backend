@@ -8,8 +8,6 @@ import {
 import { Contacts } from './entities/contacts.entity';
 import { CreateContactsDto } from './dto/create-contacts.dto';
 import { UpdateContactsDto } from './dto/update-contacts.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { DatabaseService } from '../../libs/database/database.service';
 import { BaseService } from '../base.service';
 
@@ -20,73 +18,63 @@ export class ContactsService extends BaseService<Contacts> {
   }
 
   async getAll(
+    branch_id: number,
     size: number,
     page: number,
     type: 'client' | 'supplier',
     search?: string,
   ) {
-    const filter: any = {};
+    const query = this.getRepo()
+      .createQueryBuilder('contact')
+      .where('contact.branch_id = :branchId', { branchId: branch_id });
 
     if (search) {
-      filter.name = new RegExp(search, 'i');
-      filter.phone_number = new RegExp(search, 'i');
+      query.andWhere(
+        '(LOWER(contact.name) LIKE LOWER(:search) OR contact.phone_number LIKE :search)',
+        { search: `%${search}%` },
+      );
     }
-    if (type === 'client') filter.is_client = true;
-    else if (type === 'supplier') filter.is_supplier = true;
 
-    const [data, count] = await this.getRepo().findAndCount({
-      where: filter,
-      select: [
-        'id',
-        'name',
-        'phone_number',
-        'dial_code',
-        'country_code',
-        'is_client',
-        'is_supplier',
-        'createdAt',
-        'region_id',
-        'district_id',
-      ],
-      relations: ['region', 'district'],
-      skip: (page - 1) * size,
-      take: size,
-      order: { createdAt: 'DESC' },
-    });
+    if (type === 'client') {
+      query.andWhere('contact.is_client = true');
+    } else if (type === 'supplier') {
+      query.andWhere('contact.is_supplier = true');
+    }
+
+    const [data, count] = await query
+      .select([
+        'contact.id',
+        'contact.name',
+        'contact.phone_number',
+        'contact.dial_code',
+        'contact.country_code',
+        'contact.is_client',
+        'contact.is_supplier',
+        'contact.createdAt',
+      ])
+      .orderBy('contact.createdAt', 'DESC')
+      .skip((page - 1) * size)
+      .take(size)
+      .getManyAndCount();
 
     return { data, count };
   }
 
   async create(body: CreateContactsDto) {
-    const contact = this.getRepo().create(body);
+    let contact = await this.getRepo().findOneBy({
+      phone_number: body.phone_number,
+    });
 
-    return await this.getRepo().save(contact);
+    contact = await this.getRepo().save(body);
+
+    return contact;
   }
 
-  async update(
-    {
-      country_code,
-      dial_code,
-      district_id,
-      region_id,
-      is_client,
-      is_supplier,
-      name,
-      phone_number,
-    }: UpdateContactsDto,
-    id: string,
-  ) {
+  async update(body: UpdateContactsDto, id: string) {
     try {
       const preloadData = await this.getRepo().preload({
+        ...body,
         id: +id,
-        country_code,
-        dial_code,
-        district_id,
-        region_id,
-        is_client,
-        is_supplier,
-        name,
-        phone_number,
       });
 
       if (!preloadData) {
@@ -94,7 +82,8 @@ export class ContactsService extends BaseService<Contacts> {
       }
 
       await this.getRepo().save(preloadData);
-      return await this.getById(id);
+      const contact = await this.getById(id);
+      return contact;
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }
@@ -127,17 +116,14 @@ export class ContactsService extends BaseService<Contacts> {
       where: { id: +id },
       select: [
         'id',
-        'name',
+        // 'name',
         'phone_number',
         'dial_code',
         'country_code',
         'is_client',
         'is_supplier',
         'createdAt',
-        'region_id',
-        'district_id',
       ],
-      relations: ['region', 'district'],
     });
 
     if (!contact) {

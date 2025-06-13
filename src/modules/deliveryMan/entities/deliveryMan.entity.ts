@@ -6,9 +6,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Regions } from '../../regions/entities/regions.entity';
 import { Districts } from '../../districts/entities/districts.entity';
+import { Branch } from 'src/modules/branch/entities/branch.entity';
 
 @Entity()
 export class DeliveryMan {
@@ -75,4 +78,12 @@ export class DeliveryMan {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @ManyToMany(() => Branch, (branch) => branch.deliveryMan)
+  @JoinTable({
+    name: 'delivery_man_branches',
+    joinColumn: { name: 'delivery_man_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'branch_id', referencedColumnName: 'id' },
+  })
+  branches: Branch[];
 }

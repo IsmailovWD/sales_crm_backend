@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsNumber,
+  ArrayMinSize,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -29,4 +30,8 @@ export class CreateUserDto {
 
   @IsNumber()
   sales_kpi: number;
+
+  @IsNumber({}, { each: true })
+  @ArrayMinSize(1)
+  branch_ids: number[];
 }

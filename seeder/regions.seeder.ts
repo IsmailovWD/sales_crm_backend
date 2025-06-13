@@ -59,19 +59,19 @@ const DEFAULT = [
 
 import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
-import { Regions } from '../modules/regions/entities/regions.entity';
-import { SeederMeta } from '../modules/META/seederMeta.entity';
+import { Regions } from '../src/modules/regions/entities/regions.entity';
+// import { SeederMeta } from '../src/modules/META/seederMeta.entity';
 
 export class RegionsSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<any> {
     const name = Regions.name;
-    const exits = await dataSource.getRepository(SeederMeta).findOneBy({
-      name,
-    });
+    // const exits = await dataSource.getRepository(SeederMeta).findOneBy({
+    //   name,
+    // });
 
-    if (exits) {
-      return;
-    }
+    // if (exits) {
+    //   return;
+    // }
     await dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(Regions);
 
@@ -79,7 +79,7 @@ export class RegionsSeeder implements Seeder {
         const region = repo.create(DEFAULT[i]);
         await repo.save(region);
       }
-      await manager.getRepository(SeederMeta).save({ name });
+      // await manager.getRepository(SeederMeta).save({ name });
     });
   }
 }

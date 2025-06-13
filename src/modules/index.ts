@@ -10,3 +10,4 @@ export { ContactsModule } from './contacts/contacts.module';
 export { DeliveryManModule } from './deliveryMan/deliveryMan.module';
 export { DealModule } from './deal/deal.module';
 export { DealActivityModule } from './deal-activity/deal-activity.module';
+export { PipelineModule } from './pipeline/pipeline.module';

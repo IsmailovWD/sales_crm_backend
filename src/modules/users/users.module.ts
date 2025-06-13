@@ -1,12 +1,11 @@
-import { Module, NestModule } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { forwardRef, Module, NestModule } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { AuthMiddleware } from '../../middleware/auth.middleware';
 import { DatabaseModule } from '../../libs/database/database.module';
+import { BranchModule } from '../branch/branch.module';
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, forwardRef(() => BranchModule)],
   providers: [UsersService, AuthMiddleware],
   controllers: [UsersController],
   exports: [UsersService],

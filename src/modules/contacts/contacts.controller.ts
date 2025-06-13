@@ -3,8 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Request,
-  Patch,
   Param,
   Query,
   Put,
@@ -21,24 +19,38 @@ import { CreateContactsDto } from './dto/create-contacts.dto';
 export class ContactsController {
   constructor(private readonly ContactsService: ContactsService) {}
 
-  @Get('/clients/all/:page/:limit')
+  @Get('/clients/all/:branch/:page/:limit')
   @ApiQuery({ name: 'search', required: false })
   async getAllClients(
     @Param('page') page: string,
     @Param('limit') limit: string,
+    @Param('branch') branch: string,
     @Query('search') search?: string,
   ) {
-    return this.ContactsService.getAll(+limit, +page, 'client', search);
+    return this.ContactsService.getAll(
+      +branch,
+      +limit,
+      +page,
+      'client',
+      search,
+    );
   }
 
-  @Get('/suppliers/all/:page/:limit')
+  @Get('/suppliers/all/:branch/:page/:limit')
   @ApiQuery({ name: 'search', required: false })
   async getAllSuppliers(
     @Param('page') page: string,
     @Param('limit') limit: string,
+    @Param('branch') branch: string,
     @Query('search') search?: string,
   ) {
-    return this.ContactsService.getAll(+limit, +page, 'supplier', search);
+    return this.ContactsService.getAll(
+      +branch,
+      +limit,
+      +page,
+      'supplier',
+      search,
+    );
   }
 
   @Put('/update/id/:id')

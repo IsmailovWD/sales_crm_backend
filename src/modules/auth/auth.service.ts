@@ -24,11 +24,11 @@ export class AuthService {
     const payload = {
       sub: user.id,
       username: user.username,
-      tenantId: this.cls.get(TENANT_KEY),
+      tenantId: this.cls.get<string>(TENANT_KEY),
     };
     const token = await this.jwtService.signAsync(payload, {
       expiresIn: '1d',
-      secret: process.env.SECRET_JWT + this.cls.get(TENANT_KEY),
+      secret: `${process.env.SECRET_JWT + this.cls.get(TENANT_KEY)}`,
     });
 
     return {

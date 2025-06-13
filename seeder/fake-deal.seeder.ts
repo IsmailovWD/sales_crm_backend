@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { Deal } from '../modules/deal/entities/deal.entity';
+import { Deal } from '../src/modules/deal/entities/deal.entity';
 import { faker } from '@faker-js/faker';
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
-import { DealStage } from '../modules/deal-stage/entities/dealStage.entity';
+import { DealStage } from '../src/modules/deal-stage/entities/dealStage.entity';
 
 export class FakeDealSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<any> {

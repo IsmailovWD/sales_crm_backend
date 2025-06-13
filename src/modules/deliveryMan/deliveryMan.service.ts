@@ -6,10 +6,14 @@ import { BaseService } from '../base.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, FindOptionsWhere, In, Repository } from 'typeorm';
 import { DatabaseService } from '../../libs/database/database.service';
+import { BranchService } from '../branch/branch.service';
 
 @Injectable()
 export class DeliveryManService extends BaseService<DeliveryMan> {
-  constructor(protected readonly databaseService: DatabaseService) {
+  constructor(
+    protected readonly databaseService: DatabaseService,
+    private readonly branchService: BranchService,
+  ) {
     super(databaseService, DeliveryMan);
   }
 
@@ -36,7 +40,10 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
   async create(body: CreateDeliveryManDto) {
     body.password = await this.hashPassword(body.password);
 
-    const { password, ...model } = await this.getRepo().save(body);
+    const { password, ...model } = await this.getRepo().save({
+      ...body,
+      branch_ids: body.branch_ids?.map((id) => ({ id })),
+    });
 
     return model;
   }
@@ -64,6 +71,7 @@ export class DeliveryManService extends BaseService<DeliveryMan> {
       model.salary_type = body.salary_type;
       model.salary_value = body.salary_value;
       model.werehouse_available = body.werehouse_available;
+      model.branches = await this.branchService.getAllByIds(body.branch_ids);
       if (body.password) model.password = body.password;
 
       await this.getRepo().save(model);

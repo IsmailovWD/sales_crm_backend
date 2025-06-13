@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { EntityManager, FindOptionsWhere, Repository } from 'typeorm';
 import { DeepPartial, EntityTarget, ObjectLiteral } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../libs/database/database.service';
@@ -12,8 +12,18 @@ export abstract class BaseService<T extends ObjectLiteral> {
     private readonly entity: EntityTarget<T>,
   ) {}
 
-  protected getRepo(): Repository<T> {
-    return this.databaseService.getDataSource().getRepository(this.entity);
+  protected getRepo(manager?: EntityManager): Repository<T> {
+    if (manager) {
+      return manager.getRepository(this.entity);
+    }
+    const dataSource = this.databaseService.getDataSource();
+    return dataSource.getRepository(this.entity);
+  }
+  async _base_transaction<R>(
+    runInTransaction: (manager: EntityManager) => Promise<R>,
+  ): Promise<R> {
+    const dataSource = this.databaseService.getDataSource();
+    return await dataSource.transaction(runInTransaction);
   }
 
   async hashPassword(password: string): Promise<string> {
@@ -26,7 +36,9 @@ export abstract class BaseService<T extends ObjectLiteral> {
 
   // crud
   async _base_create(body: DeepPartial<T>): Promise<Omit<T, 'password'>> {
-    const { password, ...model } = await this.getRepo().save(body);
+    console.log(body);
+    const { ...model } = await this.getRepo().save({ ...body });
+    delete model.password;
     return model;
   }
 
